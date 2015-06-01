@@ -1,4 +1,6 @@
 @echo off
+setlocal
+setlocal enabledelayedexpansion
 
 if "%1"=="" goto :showUsage
 if "%1"=="/?" goto :showUsage
@@ -7,74 +9,121 @@ if /I "%1"=="/HELP" goto :showUsage
 goto :doIt
 
 :showUsage
+::===0=========1=========2=========3=========4=========5=========6=========7=========8
 echo.
 echo Builds a VB6 dll or ocx project
 echo.
 echo Usage:
 echo.
-echo makedll projectName [path] type binaryCompatibility [/COMPAT]
+echo makedll projectName [path] [/T:{DLL^|OCX}] [/B:{P^|B^|N}] [/M:{N^|E^|F}] [/C]
 echo.
 echo   projectName      Project name (excluding version)
 echo   path             Path to folder containing project file
-echo   type             Project type ('.dll' or '.ocx')
-echo   binaryCompat     Binary compatibility: 
-echo                    'P' project compatibility
-echo                    'B' binary compatibility
-echo                    'N' no compatibility
-echo   /COMPAT          Indicates the compatibility location is 
-echo                    the Compat subfolder rather than the Bin 
+echo   /T               Project type: DLL (default) or OCX
+echo   /B               Binary compatibility: 
+echo                        B =^> binary compatibility (default)
+echo                        P =^> project compatibility
+echo                        N =^> no compatibility
+echo   /M               Manifest requirement:
+echo                        N =^> no manifest (default)
+echo                        E =^> embed manifest in object file
+echo                        F =^> freestanding manifest file
+echo   /C               Indicates the compatibility location is the
+echo                    project's Compat subfolder rather than the Bin 
 echo                    folder
 echo.
+echo   On entry, ^%%BIN-PATH^%% must be set to the folder where the 
+echo   generated manifest will be stored.
 exit /B
+::===0=========1=========2=========3=========4=========5=========6=========7=========8
 
 :doIt
+set BINARY_COMPAT=B
+set EXTENSION=dll
+set MANIFEST=NONE
+set PROJECTNAME=
+set FOLDER=
 
-set PROJECTNAME=%~1
+:parse
 
-set FOLDER=%~2
-if not "%FOLDER:~0,1%"=="." (
-	set FOLDER=%~2\
-	pushd %FOLDER%
-	shift
-) else (
-	set FOLDER=
-)
+if "%~1" == "" goto :parsingComplete
 
-if /I "%~2" == ".DLL" (
-	set EXTENSION=.dll
-) else if /I "%~2" == ".OCX" (
-	set EXTENSION=.ocx
-) else (
-	echo Invalid project type '%~2'
-	goto :err
-)
-
-if /I "%~3" == "P" (
+set ARG=%~1
+if /I "%ARG%" == "/T:DLL" (
+	set EXTENSION=dll
+) else if /I "%ARG%" == "/T:OCX" (
+	set EXTENSION=ocx
+) else if /I "%ARG:~0,3%" == "/T:" (
+	set EXTENSION=
+) else if /I "%ARG%" == "/B:P" (
 	set BINARY_COMPAT=P
-) else if /I "%~3" == "B" (
+) else if /I "%ARG%" == "/B:B" (
 	set BINARY_COMPAT=B
-) else if /I "%~3" == "N" (
+) else if /I "%ARG%" == "/B:N" (
 	set BINARY_COMPAT=N
-) else if not "%~3" == "" (
-	echo Invalid binaryCompat '%~3'
-	goto :err
-)
-
-set COMPAT=no
-if /I "%~4" == "/COMPAT" (
+) else if /I "%ARG:~0,3%" == "/B:" (
+	set BINARY_COMPAT=
+) else if /I "%ARG%" == "/M:N" (
+	set MANIFEST=NONE
+) else if /I "%ARG%" == "/M:E" (
+	set MANIFEST=EMBED
+) else if /I "%ARG%" == "/M:F" (
+	set MANIFEST=NOEMBED
+) else if /I "%ARG:~0,3%" == "/M:" (
+	set MANIFEST=
+) else if /I "%ARG%" == "/C" (
 	set COMPAT=yes
-) else if not "%~4" == "" (
-	echo Invalid parameter '%~4'
-	goto :err
+) else if "%ARG:~0,1%"=="/" (
+	echo Invalid parameter '%ARG%'
+	set ERROR=1
+) else if not defined PROJECTNAME (
+	set PROJECTNAME=%ARG%
+) else if not defined FOLDER (
+	set FOLDER=%ARG%
+	pushd !FOLDER!>nul
+	if errorlevel 1 (
+		echo Invalid folder parameter '!FOLDER!'
+		set ERROR=1
+	)
+) else (
+	echo Invalid parameter '%ARG%'
+	set ERROR=1
 )
+		
+shift
+goto :parse
 	
+:parsingComplete
+
+if not defined BIN-PATH (
+	echo ^%%BIN-PATH^%% is not defined
+	set ERROR=1
+)
+if not defined PROJECTNAME (
+	echo projectName parameter missing
+	set ERROR=1
+)
+if not defined EXTENSION (
+	echo /T:{DLL^|OCX} setting missing or invalid
+	set ERROR=1
+)
+if not defined BINARY_COMPAT (
+	echo /B:{P^|B^|N} setting missing or invalid
+	set ERROR=1
+)
+if not defined MANIFEST (
+	echo /M:{N^|E^|F} setting missing or invalid
+	set ERROR=1
+)
+if defined ERROR goto :err
+
 set FILENAME=%PROJECTNAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%
 
 echo =================================
 if defined FOLDER (
-	echo Building %FOLDER%%FILENAME%%EXTENSION%
+	echo Building %FOLDER%\%FILENAME%.%EXTENSION%
 ) else (
-	echo Building %FILENAME%%EXTENSION%
+	echo Building %FILENAME%.%EXTENSION%
 )
 
 if not exist Prev (
@@ -82,9 +131,9 @@ if not exist Prev (
 	mkdir Prev 
 )
 
-if exist %BIN-PATH%\%FILENAME%%EXTENSION% (
+if exist %BIN-PATH%\%FILENAME%.%EXTENSION% (
 	echo Copying previous binary
-	copy %BIN-PATH%\%FILENAME%%EXTENSION% Prev\* 
+	copy %BIN-PATH%\%FILENAME%.%EXTENSION% Prev\* 
 )
 
 echo Setting binary compatibility mode = %BINARY_COMPAT%; version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%
@@ -109,7 +158,7 @@ echo Setting binary compatibility mode = B
 setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-REVISION% -mode:B
 if errorlevel 1 goto :err
 
-if "%COMPAT%" == "yes" (
+if defined COMPAT (
 	if not exist Compat (
 		echo Making Compat directory
 		mkdir Compat
@@ -117,19 +166,25 @@ if "%COMPAT%" == "yes" (
 	)
 	if not "%BINARY_COMPAT%" == "B" (
 		echo Copying binary to Compat
-		copy %BIN-PATH%\%FILENAME%%EXTENSION% COMPAT\* 
+		copy %BIN-PATH%\%FILENAME%.%EXTENSION% COMPAT\* 
 		if errorlevel 1 goto :err
 	)
 )
 
-call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION%
+if "%MANIFEST%"=="NONE" (
+	echo don't generate a manifest>nul
+) else if "%MANIFEST%"=="EMBED" (
+	call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION%
+) else (
+	call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION% /NOEMBED
+)
+
 if errorlevel 1 goto :err
 
 if defined FOLDER popd %FOLDER%
 exit /B 0
 
 :err
-pause
 if defined FOLDER popd %FOLDER%
 exit /B 1
 

@@ -16,24 +16,45 @@ echo.
 echo Usage:
 echo.
 echo makedll projectName [path] [/T:{DLL^|OCX}] [/B:{P^|B^|N}] [/M:{N^|E^|F}] [/C]
+echo                     [/INLINE] [/DEP:depFilename]
 echo.
-echo   projectName      Project name (excluding version)
-echo   path             Path to folder containing project file
-echo   /T               Project type: DLL (default) or OCX
-echo   /B               Binary compatibility: 
-echo                        B =^> binary compatibility (default)
-echo                        P =^> project compatibility
-echo                        N =^> no compatibility
-echo   /M               Manifest requirement:
-echo                        N =^> no manifest (default)
-echo                        E =^> embed manifest in object file
-echo                        F =^> freestanding manifest file
-echo   /C               Indicates the compatibility location is the
-echo                    project's Compat subfolder rather than the Bin 
-echo                    folder
+echo   projectName             Project name (excluding version)
 echo.
-echo   On entry, ^%%BIN-PATH^%% must be set to the folder where the 
-echo   generated manifest will be stored.
+echo   path                    Path to folder containing project file
+echo.
+echo   /T                      Project type: DLL (default) or OCX
+echo.
+echo   /B                      Binary compatibility: 
+echo                               B =^> binary compatibility (default)
+echo                               P =^> project compatibility
+echo                               N =^> no compatibility
+echo.
+echo   /M                      Manifest requirement:
+echo                               N =^> no manifest (default)
+echo                               E =^> embed manifest in object file
+echo                               F =^> freestanding manifest file
+echo.
+echo   /C                      Indicates the compatibility location is the
+echo                           project's Compat subfolder rather than the Bin 
+echo                           folder
+echo.
+echo   /DEP:depFilename        Specifies a file containing external dependencies
+echo                           for this project. See below for further details.
+echo.
+echo   /INLINE                 Specifies that ^<dependentAsssembly^> XML elements 
+echo                           are not to be be included in the manifest for 
+echo                           external references. Rather a ^<file^> element 
+echo                           containing the COM class information is to be 
+echo                           generated for each external reference. Ignored 
+echo                           if a projectFileName.man file exists.
+echo.
+echo   On entry, ^%%BIN-PATH^%% must be set to the folder where the compiled object
+echo   file will be stored.
+echo.
+echo   depFilename
+echo     Contains details of one dependent assembly per line. Each line is formatted
+echo     as a complete ^<assemblyIdentity^> XML element. Blank lines and lines that
+echo     start with // are ignored.
 exit /B
 ::===0=========1=========2=========3=========4=========5=========6=========7=========8
 
@@ -73,6 +94,10 @@ if /I "%ARG%" == "/T:DLL" (
 	set MANIFEST=
 ) else if /I "%ARG%" == "/C" (
 	set COMPAT=yes
+) else if /I "%ARG%" == "/INLINE" (
+	set INLINE=/INLINE
+) else if "%ARG:~0,5%"=="/DEP:" (
+	set DEP="%ARG%"
 ) else if "%ARG:~0,1%"=="/" (
 	echo Invalid parameter '%ARG%'
 	set ERROR=1
@@ -173,13 +198,15 @@ if defined COMPAT (
 
 if "%MANIFEST%"=="NONE" (
 	echo don't generate a manifest>nul
-) else if "%MANIFEST%"=="EMBED" (
-	call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION%
 ) else (
-	call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION% /NOEMBED
+	:: NB: the following line sets a space in SWITCHES
+	set SWITCHES= 
+	if defined INLINE set SWITCHES=%SWITCHES% %INLINE%
+	if defined DEP set SWITCHES=%SWITCHES% %DEP%
+	if "%MANIFEST%"=="NOEMBED" set SWITCHES=%SWITCHES% /NOEMBED
+	call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION% %SWITCHES%
+	if errorlevel 1 goto :err
 )
-
-if errorlevel 1 goto :err
 
 if defined FOLDER popd %FOLDER%
 exit /B 0

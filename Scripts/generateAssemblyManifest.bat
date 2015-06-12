@@ -15,15 +15,33 @@ echo Builds the manifest for a VB6 exe, dll or ocx project
 echo.
 echo Usage:
 echo.
-echo generateAssemblyManifest projectName projectType [/NOEMBED] [/NOV6CC]
+echo generateAssemblyManifest projectName projectType [/NOEMBED] [/NOV6CC] [/INLINE]
+echo                          [/DEP:depFilename]
 echo.
-echo   projectName		project name (excluding version)
-echo   projectType              project type ('dll' or 'ocx' or 'exe')
-echo   /NOEMBED                 don't embed manifest as resource
-echo   /NOV6CC                  don't use Version 6 Common Controls
+echo   projectName             Project name (excluding version).
+echo.
+echo   projectType             Project type ('dll' or 'ocx' or 'exe').
+echo.
+echo   /NOEMBED                Don't embed manifest as resource.
+echo.
+echo   /NOV6CC                 Don't use Version 6 Common Controls.
+echo.
+echo   /DEP:depFilename        Specifies a file containing external dependencies
+echo                           for this project. See below for further details.
+echo.
+echo   /INLINE                 Specifies that ^<dependentAsssembly^> XML elements are
+echo                           not to be be included for external references. Rather
+echo                           a ^<file^> element containing the COM class information
+echo                           is to be generated for each external reference. 
+echo                           Ignored if a projectFileName.man file exists.
 echo.
 echo   On entry, ^%%BIN-PATH^%% must be set to the folder where the 
 echo   generated manifest will be stored.
+echo.
+echo   depFilename
+echo     Contains details of one dependent assembly per line. Each line is formatted
+echo     as a complete ^<assemblyIdentity^> XML element. Blank lines and lines that
+echo     start with // are ignored.
 exit /B
 ::===0=========1=========2=========3=========4=========5=========6=========7=========8
 
@@ -43,7 +61,11 @@ set ARG=%~1
 if /I "%ARG%" == "/NOEMBED" (
 	set NOEMBED=NOEMBED
 ) else if /I "%ARG%" == "/NOV6CC" (
-	set NOV6CC=NOV6CC
+	set NOV6CC=/NOV6CC
+) else if /I "%ARG%" == "/INLINE" (
+	set INLINE=/INLINE
+) else if "%ARG:~0,5%"=="/DEP:" (
+	set DEP="%ARG%"
 ) else if "%ARG:~0,1%"=="/" (
 	echo Invalid parameter '%ARG%'
 	set ERROR=1
@@ -97,11 +119,13 @@ if "%EXTENSION%"=="exe" (
         set MANIFESTFILENAME=%PROJECTNAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%.manifest
 )
 
-if defined NOV6CC (
-	GenerateManifest /Proj:%PROJECTNAME%.vbp /Out:%BIN-PATH%\%MANIFESTFILENAME%
-) else (
-	GenerateManifest /Proj:%PROJECTNAME%.vbp /Out:%BIN-PATH%\%MANIFESTFILENAME% /V6CC
-)
+:: NB: the following line sets a space in SWITCHES
+set SWITCHES= 
+if defined NOV6CC set SWITCHES=%NOV6CC%
+if defined INLINE set SWITCHES=%SWITCHES% %INLINE%
+if defined DEP set SWITCHES=%SWITCHES% %DEP%
+
+GenerateManifest /Proj:%PROJECTNAME%.vbp /Out:%BIN-PATH%\%MANIFESTFILENAME% %SWITCHES%
 if errorlevel 1 goto :err
 
 :: ensure mt.exe can find object files when hashing

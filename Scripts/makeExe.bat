@@ -15,19 +15,39 @@ echo Builds a VB6 exe project
 echo.
 echo Usage:
 echo.
-echo makeExe projectName [path] [/M:{N^|E^|F}] [/CONSOLE] [/NOV6CC]
+echo makeExe projectName [path] [/M:{N^|E^|F}] [/CONSOLE] [/NOV6CC] [/INLINE]
+echo                     [/DEP:depFilename]
 echo.
-echo   projectName      Project name (excluding version)
-echo   path             Path to folder containing project file
-echo   /M               Manifest requirement:
-echo                        N =^> no manifest (default)
-echo                        E =^> embed manifest in object file
-echo                        F =^> freestanding manifest file
-echo   /CONSOLE         Link the exe to the Console library
-echo   /NOV6CC          Don't use Version 6 Common Controls
+echo   projectName             Project name (excluding version).
 echo.
-echo   If /CONSOLE is used, then on entry ^%%BIN-PATH^%% must be 
-echo   set to the folder where the generated manifest will be stored.
+echo   path                    Path to folder containing project file.
+echo.
+echo   /M                      Manifest requirement:
+echo                               N =^> no manifest (default)
+echo                               E =^> embed manifest in object file
+echo                               F =^> freestanding manifest file
+echo.
+echo   /CONSOLE                Link the exe to the Console library.
+echo.
+echo   /NOV6CC                 Don't use Version 6 Common Controls.
+echo.
+echo   /DEP:depFilename        Specifies a file containing external dependencies
+echo                           for this project. See below for further details.
+echo.
+echo   /INLINE                 Specifies that ^<dependentAsssembly^> XML elements 
+echo                           are not to be be included in the manifest for 
+echo                           external references. Rather a ^<file^> element 
+echo                           containing the COM class information is to be 
+echo                           generated for each external reference. Ignored 
+echo                           if a projectFileName.man file exists.
+echo.
+echo   On entry, ^%%BIN-PATH^%% must be set to the folder where the compiled object
+echo   file will be stored.
+echo.
+echo   depFilename
+echo     Contains details of one dependent assembly per line. Each line is formatted
+echo     as a complete ^<assemblyIdentity^> XML element. Blank lines and lines that
+echo     start with // are ignored.
 exit /B
 ::===0=========1=========2=========3=========4=========5=========6=========7=========8
 
@@ -55,6 +75,10 @@ if /I "%ARG%" == "/M:N" (
 	set LINKTOCONSOLE=yes
 ) else if /I "%ARG%" == "/NOV6CC" (
 	set NOV6CC=NOV6CC
+) else if /I "%ARG%" == "/INLINE" (
+	set INLINE=/INLINE
+) else if "%ARG:~0,5%"=="/DEP:" (
+	set DEP="%ARG%"
 ) else if "%ARG:~0,1%"=="/" (
 	echo Invalid parameter '%ARG%'
 	set ERROR=1
@@ -117,20 +141,16 @@ if defined LINKTOCONSOLE (
 
 if "%MANIFEST%"=="NONE" (
 	echo don't generate a manifest>nul
-) else if "%MANIFEST%"=="EMBED" (
-	if defined NOV6CC (
-		call generateAssemblyManifest.bat %PROJECTNAME% .exe /NOV6CC
-	) else (
-		call generateAssemblyManifest.bat %PROJECTNAME% .exe
-	)
-) else (
-	if defined NOV6CC (
-		call generateAssemblyManifest.bat %PROJECTNAME% .exe /NOV6CC /NOEMBED
-	) else (
-		call generateAssemblyManifest.bat %PROJECTNAME% .exe /NOEMBED
-	)
+) else 
+	:: NB: the following line sets a space in SWITCHES
+	set SWITCHES= 
+	if defined NOV6CC set SWITCHES=%SWITCHES% /NOV6CC
+	if defined INLINE set SWITCHES=%SWITCHES% %INLINE%
+	if defined DEP set SWITCHES=%SWITCHES% %DEP%
+	if "%MANIFEST%"=="NOEMBED" set SWITCHES=%SWITCHES% /NOEMBED
+	call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION% %SWITCHES%
+	if errorlevel 1 goto :err
 )
-if errorlevel 1 goto :err
 
 if defined FOLDER popd %FOLDER%
 exit /B 0

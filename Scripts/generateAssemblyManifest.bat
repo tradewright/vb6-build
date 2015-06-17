@@ -1,4 +1,3 @@
-@echo oFF
 setlocal 
 setlocal enabledelayedexpansion
 

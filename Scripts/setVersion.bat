@@ -1,4 +1,3 @@
-@echo off
 if "%1"=="" (
 	echo %%1 must be the major version number
 	exit /B

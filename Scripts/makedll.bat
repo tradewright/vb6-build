@@ -104,7 +104,7 @@ if /I "%ARG%" == "/T:DLL" (
 	set PROJECTNAME=%ARG%
 ) else if not defined FOLDER (
 	set FOLDER=%ARG%
-	pushd !FOLDER!>nul
+	pushd !FOLDER!
 	if errorlevel 1 (
 		echo Invalid folder parameter '!FOLDER!'
 		set ERROR=1

@@ -5,9 +5,9 @@ if "%~1"=="" (
 	goto :err
 )
 if /I "%~2"=="DLL" (
-	echo DLL >null
+	echo DLL >nul
 ) else if /I "%~2"=="OCX" (
-	echo OCX >null
+	echo OCX >nul
 ) else (
 	echo Second parameter must be 'dll' or 'ocx'
 	goto :err

@@ -85,7 +85,7 @@ if /I "%ARG%" == "/M:N" (
 	set PROJECTNAME=%ARG%
 ) else if not defined FOLDER (
 	set FOLDER=%ARG%
-	pushd !FOLDER!>nul
+	pushd !FOLDER!
 	if errorlevel 1 (
 		echo Invalid folder parameter '!FOLDER!'
 		set ERROR=1
@@ -120,9 +120,9 @@ set FILENAME=%PROJECTNAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%.exe
 
 echo =================================
 if defined FOLDER (
-	echo Building %FOLDER%\%FILENAME%.exe
+	echo Building %FOLDER%\%FILENAME%
 ) else (
-	echo Building %FILENAME%.exe
+	echo Building %FILENAME%
 )
 
 echo Setting version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%

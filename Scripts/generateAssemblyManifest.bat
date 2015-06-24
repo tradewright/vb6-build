@@ -120,7 +120,7 @@ if "%EXTENSION%"=="exe" (
 
 :: NB: the following line sets a space in SWITCHES
 set SWITCHES= 
-if defined NOV6CC set SWITCHES=%NOV6CC%
+if not defined NOV6CC set SWITCHES=%V6CC%
 if defined INLINE set SWITCHES=%SWITCHES% %INLINE%
 if defined DEP set SWITCHES=%SWITCHES% %DEP%
 

@@ -200,10 +200,10 @@ if "%MANIFEST%"=="NONE" (
 ) else (
 	:: NB: the following line sets a space in SWITCHES
 	set SWITCHES= 
-	if defined INLINE set SWITCHES=%SWITCHES% %INLINE%
-	if defined DEP set SWITCHES=%SWITCHES% %DEP%
-	if "%MANIFEST%"=="NOEMBED" set SWITCHES=%SWITCHES% /NOEMBED
-	call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION% %SWITCHES%
+	if defined INLINE set SWITCHES=!SWITCHES! %INLINE%
+	if defined DEP set SWITCHES=!SWITCHES! %DEP%
+	if "%MANIFEST%"=="NOEMBED" set SWITCHES=!SWITCHES! /NOEMBED
+	call generateAssemblyManifest.bat %PROJECTNAME% %EXTENSION% !SWITCHES!
 	if errorlevel 1 goto :err
 )
 

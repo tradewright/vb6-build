@@ -72,10 +72,10 @@ if /I "%ARG%" == "/NOEMBED" (
 	set PROJECTNAME=%ARG%
 ) else if not defined EXTENSION (
 	if /I "%ARG%" == "DLL" (
-		set NOV6CC=NOV6CC
+		set NOV6CC=/NOV6CC
 		set EXTENSION=dll
 	) else if /I "%ARG%" == "OCX" (
-		set NOV6CC=NOV6CC
+		set NOV6CC=/NOV6CC
 		set EXTENSION=ocx
 	) else if /I "%ARG%" == "EXE" (
 		set EXTENSION=exe
@@ -120,8 +120,8 @@ if "%EXTENSION%"=="exe" (
 
 :: NB: the following line sets a space in SWITCHES
 set SWITCHES= 
-if not defined NOV6CC set SWITCHES=%V6CC%
-if defined INLINE set SWITCHES=%SWITCHES% %INLINE%
+if not defined NOV6CC set SWITCHES=/V6CC
+if defined INLINE set SWITCHES=%SWITCHES% /INLINE
 if defined DEP set SWITCHES=%SWITCHES% %DEP%
 
 GenerateManifest /Proj:%PROJECTNAME%.vbp /Out:%BIN-PATH%\%MANIFESTFILENAME% %SWITCHES%

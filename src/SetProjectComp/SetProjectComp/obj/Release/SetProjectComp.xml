@@ -1,0 +1,129 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+SetProjectComp
+</name>
+</assembly>
+<members>
+<member name="F:SetProjectComp.CommandLineParser.SwitchEntry.Switch">
+	<summary>
+ The switch identifier.
+ </summary>
+	<remarks></remarks>
+</member><member name="F:SetProjectComp.CommandLineParser.SwitchEntry.Value">
+	<summary>
+ The switch Value.
+ </summary>
+	<remarks></remarks>
+</member><member name="T:SetProjectComp.CommandLineParser.SwitchEntry">
+	<summary>
+ Contains details of a command line switch.
+ </summary>
+	<remarks></remarks>
+</member><member name="M:SetProjectComp.CommandLineParser.#ctor(System.String,System.String)">
+	<summary>
+  Initialises a new instance of the <see cref="T:SetProjectComp.CommandLineParser"></see> class.
+ </summary>
+	<param name="commandLine">The command line arguments to be parsed. For a Visual Basic 6 program,
+  this Value may be obtained using the <code>Command</code> function.</param>
+	<param name="separator">A single Character used as the separator between command line arguments.</param>
+	<remarks></remarks>
+</member><member name="P:SetProjectComp.CommandLineParser.Arg(System.Int32)">
+	<summary>
+ Gets the nth argument, where n is the value of the <paramref>i</paramref> parameter.
+ </summary>
+	<param name="i"> The number of the argument to be returned. The first argument is number 0.</param>
+	<value></value>
+	<returns>A String Value containing the nth argument, where n is the value of the <paramref>i</paramref> parameter.</returns>
+	<remarks>If the requested argument has not been supplied, an empty string is returned.</remarks>
+</member><member name="P:SetProjectComp.CommandLineParser.Args">
+	<summary>
+ Gets an array of strings containing the arguments.
+ </summary>
+	<value></value>
+	<returns>A String array containing the arguments.</returns>
+	<remarks></remarks>
+</member><member name="P:SetProjectComp.CommandLineParser.NumberOfArgs">
+	<summary>
+ Gets the number of arguments.
+ </summary>
+	<value></value>
+	<returns>The number of arguments.</returns>
+	<remarks></remarks>
+</member><member name="P:SetProjectComp.CommandLineParser.NumberOfSwitches">
+	<summary>
+ Gets the number of switches.
+ </summary>
+	<value></value>
+	<returns>The number of switches.</returns>
+	<remarks></remarks>
+</member><member name="P:SetProjectComp.CommandLineParser.IsSwitchSet(System.String)">
+	<summary>
+ Gets a value which indicates whether the specified switch was included.
+ </summary>
+	<param name="s">The identifier of the switch whose inclusion is to be indicated.</param>
+	<value></value>
+	<returns>If the specified switch was included, <code>True</code> is
+ returned. Otherwise <code>False</code> is returned.</returns>
+	<remarks></remarks>
+</member><member name="P:SetProjectComp.CommandLineParser.Switches">
+	<summary>
+ Gets an array of <code>SwitchEntry</code>s containing the
+ switch identifiers and values.
+ </summary>
+	<value></value>
+	<returns>An array of <code>SwitchEntry</code>s containing the
+ switch identifiers and values.</returns>
+	<remarks></remarks>
+</member><member name="P:SetProjectComp.CommandLineParser.SwitchValue(System.String)">
+	<summary>
+ Gets the value of the specified switch.
+ </summary>
+	<param name="s">The identifier of the switch whose value is to be returned.</param>
+	<value></value>
+	<returns>A String containing the value for the specified switch.</returns>
+	<remarks>If the requested switch has not been supplied, or no value
+ was supplied for the switch, an empty string is returned.</remarks>
+</member><member name="T:SetProjectComp.CommandLineParser">
+	<summary>
+ Provides facilities for an application to determine the number and values of
+ arguments and switches in a string (normally the arguments part of the command
+ used to start the application).
+ </summary>
+	<remarks>
+ The format of the argument string passed to the <code>CreateCommandLineParser</code> method
+ is as follows:
+
+ <pre>
+   [&lt;argument&gt; | &lt;switch&gt;] [&lt;sep&gt; (&lt;argument&gt; | &lt;switch&gt;)]...
+ </pre>
+
+ ie, there is a sequence of arguments or switches, separated by separator characters. The
+ separator character is specified in the constructor.
+
+ Arguments that contain the separator character must be enclosed in double quotes. Double quotes
+ appearing within an argument must be repeated.
+
+ Switches have the following format:
+
+ <pre>
+   ( "/" | "-")&lt;identifier&gt; [":"&lt;switchValue&gt;]
+ </pre>
+
+ ie the switch starts with a forward slash or a hyphen followed by an identifier, and
+ optionally followed by a colon and the switch Value. Switch identifiers are not
+ case-sensitive. Switch values that contain the separator character must be enclosed in
+ double quotes. Double quotes appearing within a switch Value must be repeated.
+
+ Examples (these examples use a space as the separator character):
+ <pre>
+   anArgument -sw1 anotherArg -sw2:42
+ </pre>
+		<pre>
+   "C:\Program Files\MyApp\myapp.ini" -out:C:\MyLogs\myapp.Log
+ </pre>
+	</remarks>
+</member>
+</members>
+</doc>

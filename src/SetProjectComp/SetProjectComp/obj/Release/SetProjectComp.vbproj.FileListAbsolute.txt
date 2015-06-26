@@ -1,0 +1,9 @@
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\bin\Release\SetProjectComp.exe
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\bin\Release\SetProjectComp.pdb
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\bin\Release\SetProjectComp.xml
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\obj\Release\ResolveAssemblyReference.cache
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\obj\Release\SetProjectComp.Resources.resources
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\obj\Release\SetProjectComp.vbproj.GenerateResource.Cache
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\obj\Release\SetProjectComp.exe
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\obj\Release\SetProjectComp.xml
+E:\projects\vb6-build\src\SetProjectComp\SetProjectComp\obj\Release\SetProjectComp.pdb

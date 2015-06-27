@@ -2,4 +2,10 @@
   <PropertyGroup>
     <ProjectView>ShowAllFiles</ProjectView>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <StartArguments>E:\projects\tradewright-common\src\TWUtilities\TWUtilities.vbp 108 /mode:P</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <StartArguments>E:\projects\tradewright-common\src\TWUtilities\TWUtilities.vbp 108 /mode:P</StartArguments>
+  </PropertyGroup>
 </Project>

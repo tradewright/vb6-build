@@ -15,9 +15,7 @@ Module Module1
 
             Dim modeUpdateNeeded As Boolean
             Dim versionUpdateNeeded As Boolean
-            checkIfChangesNeeded(lines, mode, revisionNumber, modeUpdateNeeded, versionUpdateNeeded)
-
-            If modeUpdateNeeded Or versionUpdateNeeded Then
+            If checkIfChangesNeeded(lines, mode, revisionNumber, modeUpdateNeeded, versionUpdateNeeded) Then
                 If modeUpdateNeeded Then adjustMode(lines, mode)
                 If versionUpdateNeeded Then adjustVersion(lines, revisionNumber)
                 writeNewFile(filename, lines)
@@ -35,26 +33,23 @@ Module Module1
             Dim s = pLines(i)
             If s = "VersionCompatible32=""1""" Then
                 ' this line will be rewritten only if needed, so delete it
-                pLines.Remove(i)
-                i = i - 1
-            ElseIf startsWith(s, "CompatibleMode=") Then
+                pLines.RemoveAt(i)
+                i -= 1
+            ElseIf s.StartsWith("CompatibleMode=") Then
                 If pMode = "P" Then
-                    pLines.Remove(i)
-                    pLines.Insert(i, "CompatibleMode=""1""")
+                    pLines(i) = "CompatibleMode=""1"""
                     Console.WriteLine("File adjusted to Project Compatibility")
                 ElseIf pMode = "B" Then
-                    pLines.Remove(i)
-                    pLines.Insert(i, "CompatibleMode=""2""")
+                    pLines(i) = "CompatibleMode=""2"""
                     pLines.Insert(i + 1, "VersionCompatible32=""1""")
-                    i = i + 1
+                    i += 1
                     Console.WriteLine("File adjusted to Binary Compatibility")
                 ElseIf pMode = "N" Then
-                    pLines.Remove(i)
-                    pLines.Insert(i, "CompatibleMode=""0""")
+                    pLines(i) = "CompatibleMode=""0"""
                     Console.WriteLine("File adjusted to No Compatibility")
                 End If
             End If
-            i = i + 1
+            i += 1
         Loop
     End Sub
 
@@ -65,20 +60,19 @@ Module Module1
         Do While i < pLines.Count
             Dim s = pLines(i)
             If s.StartsWith("RevisionVer=") Then
-                pLines.Remove(i)
-                pLines.Insert(i, "RevisionVer=" & CStr(pRevisionNumber))
+                pLines(i) = "RevisionVer=" & CStr(pRevisionNumber)
                 Console.WriteLine("Revision version set to " & CStr(pRevisionNumber))
             End If
-            i = i + 1
+            i += 1
         Loop
     End Sub
 
-    Private Sub checkIfChangesNeeded( _
+    Private Function checkIfChangesNeeded( _
                     ByVal pLines As List(Of String), _
                     ByVal pMode As String, _
                     ByVal pRevisionNumber As Integer, _
                     ByRef pModeUpdateNeeded As Boolean, _
-                    ByRef pVersionUpdateNeeded As Boolean)
+                    ByRef pVersionUpdateNeeded As Boolean) As Boolean
         For Each s In pLines
             If s.StartsWith("CompatibleMode=") Then
                 If pMode = "P" And s = "CompatibleMode=""1""" Then
@@ -92,7 +86,8 @@ Module Module1
                 If s <> ("RevisionVer=" & CLng(pRevisionNumber)) Then pVersionUpdateNeeded = True
             End If
         Next
-    End Sub
+        Return pModeUpdateNeeded Or pVersionUpdateNeeded
+    End Function
 
     Private Function getFileName(ByVal pClp As CommandLineParser) As String
         getFileName = pClp.Arg(0)
@@ -127,10 +122,6 @@ Module Module1
         Dim revision As Integer
         If Not Integer.TryParse(revString, revision) Or revision < 0 Or revision > 9999 Then Throw New ArgumentException("Product revision number must be an integer 0-9999")
         Return revision
-    End Function
-
-    Private Function startsWith(ByVal s As String, ByVal pSubStr As String) As Boolean
-        startsWith = (Left$(UCase$(s), Len(pSubStr)) = UCase$(pSubStr))
     End Function
 
     Private Sub writeNewFile(ByVal pFilename As String, ByRef pLines As List(Of String))

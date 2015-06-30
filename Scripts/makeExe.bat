@@ -126,7 +126,7 @@ if defined FOLDER (
 )
 
 echo Setting version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%
-setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-REVISION% -mode:N
+setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:N
 if errorlevel 1 goto :err
 
 vb6.exe /m %PROJECTNAME%.vbp

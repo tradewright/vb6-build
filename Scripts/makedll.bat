@@ -162,7 +162,7 @@ if exist %BIN-PATH%\%FILENAME%.%EXTENSION% (
 
 echo Setting binary compatibility mode = %BINARY_COMPAT%; version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%
 echo ... for file: %PROJECTNAME%.vbp 
-setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-REVISION% -mode:%BINARY_COMPAT%
+setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:%BINARY_COMPAT%
 if errorlevel 1 goto :err
 
 echo Compiling
@@ -179,7 +179,7 @@ if exist %BIN-PATH%\%FILENAME%.exp (
 )
 
 echo Setting binary compatibility mode = B
-setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-REVISION% -mode:B
+setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:B
 if errorlevel 1 goto :err
 
 if defined COMPAT (

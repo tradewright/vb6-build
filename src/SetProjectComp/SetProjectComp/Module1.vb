@@ -9,15 +9,13 @@ Module Module1
             Dim clp = New CommandLineParser(Command, " ")
             Dim filename = getFileName(clp)
             Dim mode = getMode(clp)
-            Dim revisionNumber As Integer = getRevision(clp)
+            Dim majorVersionNumber = getVersionNumberPart(clp, 1, "Major")
+            Dim minorVersionNumber = getVersionNumberPart(clp, 2, "Minor")
+            Dim revisionNumber = getVersionNumberPart(clp, 3, "Revision")
 
             Dim lines = getLines(filename)
 
-            Dim modeUpdateNeeded As Boolean
-            Dim versionUpdateNeeded As Boolean
-            If checkIfChangesNeeded(lines, mode, revisionNumber, modeUpdateNeeded, versionUpdateNeeded) Then
-                If modeUpdateNeeded Then adjustMode(lines, mode)
-                If versionUpdateNeeded Then adjustVersion(lines, revisionNumber)
+            If adjust(lines, mode, majorVersionNumber, minorVersionNumber, revisionNumber) Then
                 writeNewFile(filename, lines)
             End If
         Catch e As Exception
@@ -25,9 +23,15 @@ Module Module1
         End Try
     End Sub
 
-    Private Sub adjustMode( _
+    Private Function adjust( _
                     ByVal pLines As List(Of String), _
-                    ByVal pMode As String)
+                    ByVal pMode As String, _
+                    ByVal pMajorVersionNumber As String, _
+                    ByVal pMinorVersionNumber As String, _
+                    ByVal pRevisionNumber As String) As Boolean
+        Dim adjusted = False
+        Dim versionAdjusted = False
+
         Dim i = 0
         Do While i < pLines.Count
             Dim s = pLines(i)
@@ -36,57 +40,56 @@ Module Module1
                 pLines.RemoveAt(i)
                 i -= 1
             ElseIf s.StartsWith("CompatibleMode=") Then
-                If pMode = "P" Then
-                    pLines(i) = "CompatibleMode=""1"""
-                    Console.WriteLine("File adjusted to Project Compatibility")
-                ElseIf pMode = "B" Then
-                    pLines(i) = "CompatibleMode=""2"""
-                    pLines.Insert(i + 1, "VersionCompatible32=""1""")
-                    i += 1
-                    Console.WriteLine("File adjusted to Binary Compatibility")
-                ElseIf pMode = "N" Then
-                    pLines(i) = "CompatibleMode=""0"""
-                    Console.WriteLine("File adjusted to No Compatibility")
-                End If
-            End If
-            i += 1
-        Loop
-    End Sub
-
-    Private Sub adjustVersion( _
-                    ByVal pLines As List(Of String), _
-                    ByVal pRevisionNumber As Integer)
-        Dim i = 0
-        Do While i < pLines.Count
-            Dim s = pLines(i)
-            If s.StartsWith("RevisionVer=") Then
-                pLines(i) = "RevisionVer=" & CStr(pRevisionNumber)
-                Console.WriteLine("Revision version set to " & CStr(pRevisionNumber))
-            End If
-            i += 1
-        Loop
-    End Sub
-
-    Private Function checkIfChangesNeeded( _
-                    ByVal pLines As List(Of String), _
-                    ByVal pMode As String, _
-                    ByVal pRevisionNumber As Integer, _
-                    ByRef pModeUpdateNeeded As Boolean, _
-                    ByRef pVersionUpdateNeeded As Boolean) As Boolean
-        For Each s In pLines
-            If s.StartsWith("CompatibleMode=") Then
-                If pMode = "P" And s = "CompatibleMode=""1""" Then
-                    Console.WriteLine("Already in Project Compatibility mode")
-                ElseIf pMode = "B" And s = "CompatibleMode=""2""" Then
-                    Console.WriteLine("Already in Binary Compatibility mode")
-                Else
-                    pModeUpdateNeeded = True
-                End If
+                adjusted = adjustCompatibleMode(pLines, i, pMode)
+            ElseIf s.StartsWith("MajorVer=") Then
+                versionAdjusted = adjustVersion(pLines, i, "MajorVer=", pMajorVersionNumber)
+            ElseIf s.StartsWith("MinorVer=") Then
+                versionAdjusted = adjustVersion(pLines, i, "MinorVer=", pMinorVersionNumber)
             ElseIf s.StartsWith("RevisionVer=") Then
-                If s <> ("RevisionVer=" & CLng(pRevisionNumber)) Then pVersionUpdateNeeded = True
+                versionAdjusted = adjustVersion(pLines, i, "RevisionVer=", pRevisionNumber)
             End If
-        Next
-        Return pModeUpdateNeeded Or pVersionUpdateNeeded
+            i += 1
+        Loop
+
+        If versionAdjusted Then
+            Console.WriteLine(String.Format("Version set to {0}.{1}.{2}", pMajorVersionNumber, pMinorVersionNumber, pRevisionNumber))
+        End If
+        Return adjusted Or versionAdjusted
+    End Function
+
+    Private Function adjustCompatibleMode(ByVal pLines As List(Of String), ByRef pIndex As Integer, ByVal pMode As String) As Boolean
+        Dim adjustedLine = "CompatibleMode=" & getModeNumber(pMode)
+
+        If pLines(pIndex) = adjustedLine Then Return False
+
+        pLines(pIndex) = adjustedLine
+        If pMode = "B" Then
+            pLines.Insert(pIndex + 1, "VersionCompatible32=""1""")
+            pIndex += 1
+        End If
+        Console.WriteLine("Project compatibility adjusted to " & pMode)
+        Return True
+    End Function
+
+    Private Function adjustVersion(ByVal pLines As List(Of String), ByRef pIndex As Integer, ByVal pLinePrefix As String, ByVal pVersionNumber As String) As Boolean
+        Dim adjustedLine = pLinePrefix & pVersionNumber
+
+        If pLines(pIndex) = adjustedLine Then Return False
+
+        pLines(pIndex) = adjustedLine
+        Return True
+    End Function
+
+    Private Function getModeNumber(ByVal pMode As String) As String
+        Dim result = String.Empty
+        If pMode = "P" Then
+            result = "1"
+        ElseIf pMode = "B" Then
+            result = "2"
+        ElseIf pMode = "N" Then
+            result = "0"
+        End If
+        Return result
     End Function
 
     Private Function getFileName(ByVal pClp As CommandLineParser) As String
@@ -115,13 +118,13 @@ Module Module1
         If getMode <> "P" And getMode <> "B" And getMode <> "N" Then Throw New ArgumentException("Mode must be 'P' or 'B' or 'N'")
     End Function
 
-    Private Function getRevision(ByVal pClp) As Integer
-        Dim revString As String
-        revString = pClp.Arg(1)
-        If revString = "" Then Throw New ArgumentException("Product revision number must be supplied as second argument")
-        Dim revision As Integer
-        If Not Integer.TryParse(revString, revision) Or revision < 0 Or revision > 9999 Then Throw New ArgumentException("Product revision number must be an integer 0-9999")
-        Return revision
+    Private Function getVersionNumberPart(ByVal pClp As CommandLineParser, ByVal argumentNumber As Integer, ByVal versionPart As String) As String
+        Dim versionString As String
+        versionString = pClp.Arg(argumentNumber)
+        If versionString = "" Then Throw New ArgumentException(String.Format("Product {0} version must be supplied as argument {1}", versionPart, argumentNumber))
+        Dim version As Integer
+        If Not Integer.TryParse(versionString, version) Or version < 0 Or version > 9999 Then Throw New ArgumentException(String.Format("Product {0} version must be an integer 0-9999", versionPart))
+        Return versionString
     End Function
 
     Private Sub writeNewFile(ByVal pFilename As String, ByRef pLines As List(Of String))

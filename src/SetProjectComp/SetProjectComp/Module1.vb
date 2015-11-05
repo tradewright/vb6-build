@@ -58,7 +58,7 @@ Module Module1
     End Function
 
     Private Function adjustCompatibleMode(ByVal pLines As List(Of String), ByRef pIndex As Integer, ByVal pMode As String) As Boolean
-        Dim adjustedLine = "CompatibleMode=" & getModeNumber(pMode)
+        Dim adjustedLine = "CompatibleMode=" & """" & getModeNumber(pMode) & """"
 
         If pLines(pIndex) = adjustedLine Then Return False
 

@@ -144,8 +144,16 @@ if not defined NOEMBED (
 		echo Can't embed manifest as resource for ocx
 	) else (
 		echo Embedding manifest as a resource
+:retry
 		mt.exe -manifest %BIN-PATH%\%MANIFESTFILENAME% -outputresource:%BIN-PATH%\%OBJECTFILENAME%;#1 -nologo
-		if errorlevel 1 goto :err
+		if errorlevel 2 (
+			echo mt.exe returned error %errorlevel%
+			goto :err
+		)
+		if errorlevel 1 (
+			echo mt.exe returned error %errorlevel% - retrying
+			goto :retry
+		)
 		echo Deleting manifest file
 		del %BIN-PATH%\%MANIFESTFILENAME%
 	)

@@ -14,7 +14,7 @@ echo Builds a VB6 dll or ocx project
 echo.
 echo Usage:
 echo.
-echo makedll projectName [path] [/T:{DLL^|OCX}] [/B:{P^|B^|N}] [/M:{N^|E^|F}] [/C]
+echo makedll projectName [path] [/T:{DLL^|OCX}] [/B:{P^|PP^|B^|N}] [/M:{N^|E^|F}] [/C]
 echo                     [/INLINE] [/DEP:depFilename]
 echo.
 echo   projectName             Project name (excluding version)
@@ -24,9 +24,11 @@ echo.
 echo   /T                      Project type: DLL (default) or OCX
 echo.
 echo   /B                      Binary compatibility: 
-echo                               B =^> binary compatibility (default)
-echo                               P =^> project compatibility
-echo                               N =^> no compatibility
+echo                               B  =^> binary compatibility (default)
+echo                               P  =^> project compatibility
+echo                               PP =^> project compatibility (and don't set to 
+echo                                      binary compatibility after building)
+echo                               N  =^> no compatibility
 echo.
 echo   /M                      Manifest requirement:
 echo                               N =^> no manifest (default)
@@ -77,6 +79,8 @@ if /I "%ARG%" == "/T:DLL" (
 	set EXTENSION=
 ) else if /I "%ARG%" == "/B:P" (
 	set BINARY_COMPAT=P
+) else if /I "%ARG%" == "/B:PP" (
+	set BINARY_COMPAT=PP
 ) else if /I "%ARG%" == "/B:B" (
 	set BINARY_COMPAT=B
 ) else if /I "%ARG%" == "/B:N" (
@@ -132,7 +136,7 @@ if not defined EXTENSION (
 	set ERROR=1
 )
 if not defined BINARY_COMPAT (
-	echo /B:{P^|B^|N} setting missing or invalid
+	echo /B:{P^|PP^|B^|N} setting missing or invalid
 	set ERROR=1
 )
 if not defined MANIFEST (
@@ -160,9 +164,9 @@ if exist %BIN-PATH%\%FILENAME%.%EXTENSION% (
 	copy %BIN-PATH%\%FILENAME%.%EXTENSION% Prev\* 
 )
 
-echo Setting binary compatibility mode = %BINARY_COMPAT%; version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%
+echo Setting binary compatibility mode = %BINARY_COMPAT:~0,1%; version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%
 echo ... for file: %PROJECTNAME%.vbp 
-setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:%BINARY_COMPAT%
+setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:%BINARY_COMPAT:~0,1%
 if errorlevel 1 goto :err
 
 echo Compiling
@@ -178,9 +182,11 @@ if exist %BIN-PATH%\%FILENAME%.exp (
 	del %BIN-PATH%\%FILENAME%.exp 
 )
 
-echo Setting binary compatibility mode = B
-setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:B
-if errorlevel 1 goto :err
+if not "%BINARY_COMPAT%"=="PP" (
+	echo Setting binary compatibility mode = B
+	setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:B
+	if errorlevel 1 goto :err
+)
 
 if defined COMPAT (
 	if not exist Compat (

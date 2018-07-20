@@ -129,7 +129,11 @@ echo Setting version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%
 setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:N
 if errorlevel 1 goto :err
 
-vb6.exe /m %PROJECTNAME%.vbp
+:: Delay for a short time to prevent VB6 being run too frequently which
+:: can cause problems
+PING localhost -n 2 >NUL
+
+vb6.exe /m %PROJECTNAME%.vbp /outdir %BIN-PATH%
 if errorlevel 1 goto :err
 
 if defined LINKTOCONSOLE (

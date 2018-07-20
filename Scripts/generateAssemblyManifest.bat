@@ -128,14 +128,14 @@ GenerateManifest /Proj:%PROJECTNAME%.vbp /Out:%BIN-PATH%\%MANIFESTFILENAME% %SWI
 if errorlevel 1 goto :err
 
 :: ensure mt.exe can find object files when hashing
-pushd %BIN-PATH%
-
-echo Updating manifest hash
-mt.exe -manifest %BIN-PATH%\%MANIFESTFILENAME% -hashupdate -nologo
-if errorlevel 1 (
-	popd		
-	goto :err
-)
+:: pushd %BIN-PATH%
+:: 
+:: echo Updating manifest hash
+:: mt.exe -manifest %BIN-PATH%\%MANIFESTFILENAME% -hashupdate -nologo
+:: if errorlevel 1 (
+:: 	popd		
+:: 	goto :err
+:: )
 
 popd
 
@@ -146,10 +146,6 @@ if not defined NOEMBED (
 		echo Embedding manifest as a resource
 :retry
 		mt.exe -manifest %BIN-PATH%\%MANIFESTFILENAME% -outputresource:%BIN-PATH%\%OBJECTFILENAME%;#1 -nologo
-		if errorlevel 2 (
-			echo mt.exe returned error %errorlevel%
-			goto :err
-		)
 		if errorlevel 1 (
 			echo mt.exe returned error %errorlevel% - retrying
 			goto :retry

@@ -64,7 +64,7 @@ if /I "%ARG%" == "/NOEMBED" (
 ) else if /I "%ARG%" == "/INLINE" (
 	set INLINE=/INLINE
 ) else if "%ARG:~0,5%"=="/DEP:" (
-	set DEP="%ARG%"
+	set DEP=%ARG%
 ) else if "%ARG:~0,1%"=="/" (
 	echo Invalid parameter '%ARG%'
 	set ERROR=1

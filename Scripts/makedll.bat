@@ -1,3 +1,4 @@
+@echo off
 setlocal
 setlocal enabledelayedexpansion
 
@@ -182,9 +183,13 @@ if exist %BIN-PATH%\%FILENAME%.exp (
 	del %BIN-PATH%\%FILENAME%.exp 
 )
 
-if not "%BINARY_COMPAT%"=="PP" (
+if "%BINARY_COMPAT%"=="PP" (
+	echo Leaving binary compatibility mode = P
+	setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:P
+	if errorlevel 1 goto :err
+) ELSE (
 	echo Setting binary compatibility mode = B
-	setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:B
+	setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:B
 	if errorlevel 1 goto :err
 )
 

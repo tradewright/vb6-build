@@ -1,3 +1,4 @@
+@echo off
 setlocal
 setlocal enabledelayedexpansion
 
@@ -130,8 +131,8 @@ setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BU
 if errorlevel 1 goto :err
 
 :: Delay for a short time to prevent VB6 being run too frequently which
-:: can cause problems
-PING localhost -n 2 >NUL
+:: can cause problems (now commented out as not sure it's needed)
+::PING localhost -n 2 >NUL
 
 vb6.exe /m %PROJECTNAME%.vbp /outdir %BIN-PATH%
 if errorlevel 1 goto :err
@@ -154,6 +155,8 @@ if "%MANIFEST%"=="NONE" (
 	call generateAssemblyManifest.bat %PROJECTNAME% exe !SWITCHES!
 	if errorlevel 1 goto :err
 )
+
+setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:N
 
 if defined FOLDER popd %FOLDER%
 exit /B 0

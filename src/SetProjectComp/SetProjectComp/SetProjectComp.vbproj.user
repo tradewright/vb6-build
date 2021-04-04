@@ -12,7 +12,7 @@
     <VerifyUploadedFiles>false</VerifyUploadedFiles>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartArguments>E:\projects\tradewright-common\src\TWUtilities\TWUtilities.vbp 108 /mode:P</StartArguments>
+    <StartArguments>D:\projects\tradewright-common\src\TWUtilities\TWUtilities.vbp 2 5 251 /mode:P</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <StartArguments>E:\projects\tradewright-common\src\TWUtilities\TWUtilities.vbp 108 /mode:P</StartArguments>

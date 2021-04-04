@@ -185,11 +185,11 @@ if exist %BIN-PATH%\%FILENAME%.exp (
 
 if "%BINARY_COMPAT%"=="PP" (
 	echo Leaving binary compatibility mode = P
-	setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:P
+	setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:P -n
 	if errorlevel 1 goto :err
 ) ELSE (
 	echo Setting binary compatibility mode = B
-	setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:B
+	setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:B -n
 	if errorlevel 1 goto :err
 )
 

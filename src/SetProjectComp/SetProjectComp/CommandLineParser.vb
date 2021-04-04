@@ -75,7 +75,7 @@ Public NotInheritable Class CommandLineParser
     '''  this Value may be obtained using the <code>Command</code> function.</param>
     ''' <param name="separator">A single Character used as the separator between command line arguments.</param>
     ''' <remarks></remarks>
-    Public Sub New(ByVal commandLine As String, ByVal separator As String)
+    Public Sub New(commandLine As String, separator As String)
         mCommandLine = commandLine.Trim
         mSep = separator
         getArgs()
@@ -88,7 +88,7 @@ Public NotInheritable Class CommandLineParser
     ''' <value></value>
     ''' <returns>A String Value containing the nth argument, where n is the value of the <paramref>i</paramref> parameter.</returns>
     ''' <remarks>If the requested argument has not been supplied, an empty string is returned.</remarks>
-    Public ReadOnly Property Arg(ByVal i As Integer) As String
+    Public ReadOnly Property Arg(i As Integer) As String
         Get
             Try
                 Return mArgs(i)
@@ -142,7 +142,7 @@ Public NotInheritable Class CommandLineParser
     ''' <returns>If the specified switch was included, <code>True</code> is
     ''' returned. Otherwise <code>False</code> is returned.</returns>
     ''' <remarks></remarks>
-    Public ReadOnly Property IsSwitchSet(ByVal s As String) As Boolean
+    Public ReadOnly Property IsSwitchSet(s As String) As Boolean
         Get
             For Each switchEntry As SwitchEntry In mSwitches
                 If switchEntry.Switch.ToUpper = s.ToUpper Then Return True
@@ -173,7 +173,7 @@ Public NotInheritable Class CommandLineParser
     ''' <returns>A String containing the value for the specified switch.</returns>
     ''' <remarks>If the requested switch has not been supplied, or no value
     ''' was supplied for the switch, an empty string is returned.</remarks>
-    Public ReadOnly Property SwitchValue(ByVal s As String) As String
+    Public ReadOnly Property SwitchValue(s As String) As String
         Get
             For Each switchEntry As SwitchEntry In mSwitches
                 If switchEntry.Switch.ToUpper = s.ToUpper Then Return switchEntry.Value
@@ -183,7 +183,7 @@ Public NotInheritable Class CommandLineParser
     End Property
 
 
-    Private Function ContainsUnbalancedQuotes(ByVal inString As String) As Boolean
+    Private Function ContainsUnbalancedQuotes(inString As String) As Boolean
         Dim pos = inString.LastIndexOf("""")
         Dim unBalanced = False
         Do While pos <> -1
@@ -218,7 +218,7 @@ Public NotInheritable Class CommandLineParser
         End If
     End Sub
 
-    Private Sub setSwitchOrArg(ByVal value As String)
+    Private Sub setSwitchOrArg(value As String)
         If value.StartsWith("/") Or value.StartsWith("-") Then
             setSwitch(value.Substring(1))
         Else
@@ -226,7 +226,7 @@ Public NotInheritable Class CommandLineParser
         End If
     End Sub
 
-    Private Sub setSwitch(ByVal val As String)
+    Private Sub setSwitch(val As String)
         Dim i = val.IndexOf(":")
         Dim switchEntry = New SwitchEntry
 

@@ -156,7 +156,7 @@ if "%MANIFEST%"=="NONE" (
 	if errorlevel 1 goto :err
 )
 
-setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:N
+setprojectcomp.exe %PROJECTNAME%.vbp 1 0 0 -mode:N -n
 
 if defined FOLDER popd %FOLDER%
 exit /B 0

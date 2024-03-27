@@ -7,17 +7,18 @@ Module Module1
         Try
 
             Dim clp = New CommandLineParser(Command, " ")
-            Dim filename = getFileName(clp)
+            Dim projectFilename = getProjectFileName(clp)
             Dim mode = getMode(clp)
             Dim majorVersionNumber = getVersionNumberPart(clp, 1, "Major")
             Dim minorVersionNumber = getVersionNumberPart(clp, 2, "Minor")
             Dim revisionNumber = getVersionNumberPart(clp, 3, "Revision")
             Dim normaliseRefsAndObjects = clp.IsSwitchSet("n")
+            Dim objectFilename = getObjectFilename(clp)
 
-            Dim lines = getLines(filename)
+            Dim lines = getLines(projectFilename)
 
-            If adjust(lines, mode, majorVersionNumber, minorVersionNumber, revisionNumber, normaliseRefsAndObjects) Then
-                writeNewFile(filename, lines)
+            If adjust(lines, mode, majorVersionNumber, minorVersionNumber, revisionNumber, objectFilename, normaliseRefsAndObjects) Then
+                writeNewFile(projectFilename, lines)
             End If
         Catch e As Exception
             Console.Error.WriteLine("Error : " & e.Message)
@@ -30,6 +31,7 @@ Module Module1
                     pMajorVersionNumber As String,
                     pMinorVersionNumber As String,
                     pRevisionNumber As String,
+                    pObjectFilename As String,
                     pNormaliseRefsAndObjects As Boolean) As Boolean
         Dim adjusted = False
         Dim versionAdjusted = False
@@ -40,21 +42,22 @@ Module Module1
             If s = "VersionCompatible32=""1""" Then
                 ' this line will be rewritten only if needed, so delete it
                 pLines.RemoveAt(i)
+                adjusted = True
                 i -= 1
             ElseIf s.StartsWith("CompatibleMode=") Then
-                adjusted = adjustCompatibleMode(pLines, i, pMode)
+                adjusted = adjusted Or adjustCompatibleMode(pLines, i, pMode)
             ElseIf s.StartsWith("MajorVer=") Then
-                versionAdjusted = adjustVersion(pLines, i, "MajorVer=", pMajorVersionNumber)
+                versionAdjusted = versionAdjusted Or adjustVersion(pLines, i, "MajorVer=", pMajorVersionNumber)
             ElseIf s.StartsWith("MinorVer=") Then
-                versionAdjusted = adjustVersion(pLines, i, "MinorVer=", pMinorVersionNumber)
+                versionAdjusted = versionAdjusted Or adjustVersion(pLines, i, "MinorVer=", pMinorVersionNumber)
             ElseIf s.StartsWith("RevisionVer=") Then
-                versionAdjusted = adjustVersion(pLines, i, "RevisionVer=", pRevisionNumber)
+                versionAdjusted = versionAdjusted Or adjustVersion(pLines, i, "RevisionVer=", pRevisionNumber)
+            ElseIf s.StartsWith("ExeName32=") Then
+                adjusted = adjusted Or adjustExeName(pLines, i, pObjectFilename)
             ElseIf s.StartsWith("Reference=") And pNormaliseRefsAndObjects Then
-                normaliseReference(pLines, i)
-                adjusted = True
+                adjusted = adjusted Or normaliseReference(pLines, i)
             ElseIf s.StartsWith("Object=") And pNormaliseRefsAndObjects Then
-                normaliseObject(pLines, i)
-                adjusted = True
+                adjusted = adjusted Or normaliseObject(pLines, i)
             End If
             i += 1
         Loop
@@ -66,7 +69,7 @@ Module Module1
     End Function
 
     Private Function adjustCompatibleMode(pLines As List(Of String), ByRef pIndex As Integer, pMode As String) As Boolean
-        Dim adjustedLine = "CompatibleMode=" & """" & getModeNumber(pMode) & """"
+        Dim adjustedLine = $"CompatibleMode=""{getModeNumber(pMode)}"""
 
         If pLines(pIndex) = adjustedLine Then Return False
 
@@ -76,6 +79,14 @@ Module Module1
             pIndex += 1
         End If
         Console.WriteLine("Project compatibility adjusted to " & pMode)
+        Return True
+    End Function
+
+    Private Function adjustExeName(pLines As List(Of String), ByRef pIndex As Integer, pObjectFilename As String) As Boolean
+        If pObjectFilename = "" Then Return False
+        Dim adjustedLine = $"ExeName32=""{pObjectFilename}"""
+        If adjustedLine.ToUpperInvariant() = pLines(pIndex).ToUpperInvariant() Then Return False
+        pLines(pIndex) = adjustedLine
         Return True
     End Function
 
@@ -100,9 +111,13 @@ Module Module1
         Return result
     End Function
 
-    Private Function getFileName(pClp As CommandLineParser) As String
-        getFileName = pClp.Arg(0)
-        If getFileName = "" Then Throw New ArgumentException("Project filename must be supplied as first argument")
+    Private Function getObjectFileName(pClp As CommandLineParser) As String
+        getObjectFileName = pClp.SwitchValue("ObjectFileName")
+    End Function
+
+    Private Function getProjectFileName(pClp As CommandLineParser) As String
+        getProjectFileName = pClp.Arg(0)
+        If getProjectFileName = "" Then Throw New ArgumentException("Project filename must be supplied as first argument")
     End Function
 
     Private Function getLines(pFilename As String) As List(Of String)
@@ -129,24 +144,66 @@ Module Module1
     Private Function getVersionNumberPart(pClp As CommandLineParser, argumentNumber As Integer, versionPart As String) As String
         Dim versionString As String
         versionString = pClp.Arg(argumentNumber)
-        If versionString = "" Then Throw New ArgumentException(String.Format("Product {0} version must be supplied as argument {1}", versionPart, argumentNumber))
+        If versionString = "" Then Throw New ArgumentException($"Product {versionPart} version must be supplied as argument {argumentNumber}")
         Dim version As Integer
-        If Not Integer.TryParse(versionString, version) Or version < 0 Or version > 9999 Then Throw New ArgumentException(String.Format("Product {0} version must be an integer 0-9999", versionPart))
+        If Not Integer.TryParse(versionString, version) Or version < 0 Or version > 9999 Then Throw New ArgumentException($"Product {versionPart} version must be an integer 0-9999")
         Return versionString
     End Function
 
-    Private Sub normaliseObject(pLines As List(Of String), pIndex As Integer)
-        Dim elements = pLines(pIndex).Split({"#"c})
-        elements(2) = elements(2).ToUpperInvariant()
-        pLines(pIndex) = String.Join("#", elements)
-    End Sub
+    Private Function normaliseObject(pLines As List(Of String), pIndex As Integer) As Boolean
+        Dim adjusted As Boolean
 
-    Private Sub normaliseReference(pLines As List(Of String), pIndex As Integer)
         Dim elements = pLines(pIndex).Split({"#"c})
-        elements(3) = elements(3).Substring(elements(3).LastIndexOf("\") + 1).ToUpper
-        elements(4) = elements(4).ToUpperInvariant()
-        pLines(pIndex) = String.Join("#", elements)
-    End Sub
+        If elements(1) <> "0.0" Then
+            elements(1) = "0.0"
+            adjusted = True
+        End If
+
+        Dim s = elements(2).ToUpperInvariant()
+        If s <> elements(2) Then
+            elements(2) = s
+            adjusted = True
+        End If
+
+        If adjusted Then pLines(pIndex) = String.Join("#", elements)
+        Return adjusted
+    End Function
+
+    Private Function normaliseReference(pLines As List(Of String), pIndex As Integer) As Boolean
+        Dim adjusted As Boolean
+        Dim s As String
+
+        Dim elements = pLines(pIndex).Split({"#"c})
+
+        If elements(1) <> "0.0" Then
+            elements(1) = "0.0"
+            adjusted = True
+        End If
+
+        Dim pathEls = elements(3).ToUpperInvariant.Split({"\"c})
+        ' note that this element in some References ends with something like this: ...\vbscript.dll\3
+        For i = 0 To pathEls.Length - 1
+            Dim pathEl = pathEls(i)
+            If pathEl.IndexOf(".DLL") <> -1 Or pathEl.IndexOf(".TLB") <> -1 Then
+                s = pathEl
+                If i <> pathEls.Length - 1 Then s = s & "\" & pathEls(i + 1)
+                Exit For
+            End If
+        Next
+        If elements(3) <> s Then
+            elements(3) = s
+            adjusted = True
+        End If
+
+        s = elements(4).ToUpperInvariant()
+        If elements(4) <> s Then
+            elements(4) = s
+            adjusted = True
+        End If
+
+        If adjusted Then pLines(pIndex) = String.Join("#", elements)
+        Return adjusted
+    End Function
 
     Private Sub writeNewFile(pFilename As String, ByRef pLines As List(Of String))
         Dim writer = File.CreateText(pFilename)

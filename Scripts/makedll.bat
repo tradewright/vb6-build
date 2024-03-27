@@ -15,12 +15,14 @@ echo Builds a VB6 dll or ocx project
 echo.
 echo Usage:
 echo.
-echo makedll projectName [path] [/T:{DLL^|OCX}] [/B:{P^|PP^|B^|N}] [/M:{N^|E^|F}] [/C]
-echo                     [/INLINE] [/DEP:depFilename]
+echo makedll projectName [path] [/O:objFileName] [/T:{DLL^|OCX}] [/B:{P^|PP^|B^|N}]
+echo                     [/M:{N^|E^|F}] [/NOVERSION] [/C] [/INLINE] [/DEP:depFilename]
 echo.
 echo   projectName             Project name (excluding version)
 echo.
 echo   path                    Path to folder containing project file
+echo.
+echo   /O:objFilename          Objectfile name (no extension)
 echo.
 echo   /T                      Project type: DLL (default) or OCX
 echo.
@@ -35,6 +37,10 @@ echo   /M                      Manifest requirement:
 echo                               N =^> no manifest (default)
 echo                               E =^> embed manifest in object file
 echo                               F =^> freestanding manifest file
+echo.
+echo   /NOVERSION              Indicates that the major and minor version numbers
+echo                           are not to be included as a suffix in the object
+echo                           filename.
 echo.
 echo   /C                      Indicates the compatibility location is the
 echo                           project's Compat subfolder rather than the Bin 
@@ -66,13 +72,16 @@ set EXTENSION=dll
 set MANIFEST=NONE
 set PROJECTNAME=
 set FOLDER=
+set NOVERSION=NO
 
 :parse
 
 if "%~1" == "" goto :parsingComplete
 
 set ARG=%~1
-if /I "%ARG%" == "/T:DLL" (
+if /I "%ARG:~0,3%"=="/O:" (
+	set OBJECTFILENAME=%ARG:~3%
+) else if /I "%ARG%" == "/T:DLL" (
 	set EXTENSION=dll
 ) else if /I "%ARG%" == "/T:OCX" (
 	set EXTENSION=ocx
@@ -96,6 +105,8 @@ if /I "%ARG%" == "/T:DLL" (
 	set MANIFEST=NOEMBED
 ) else if /I "%ARG:~0,3%" == "/M:" (
 	set MANIFEST=
+) else if /I "%ARG:~0,10%" == "/NOVERSION" (
+	set NOVERSION=YES
 ) else if /I "%ARG%" == "/C" (
 	set COMPAT=yes
 ) else if /I "%ARG%" == "/INLINE" (
@@ -146,13 +157,18 @@ if not defined MANIFEST (
 )
 if defined ERROR goto :err
 
-set FILENAME=%PROJECTNAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%
+if not defined OBJECTFILENAME (
+        set OBJECTFILENAME=%PROJECTNAME%
+)
+if not "%NOVERSION%"=="YES" (
+	set OBJECTFILENAME=%OBJECTFILENAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%
+)
 
 echo =================================
 if defined FOLDER (
-	echo Building %FOLDER%\%FILENAME%.%EXTENSION%
+	echo Building %FOLDER%\%PROJECTNAME%.vbp =^> %OBJECTFILENAME%.exe
 ) else (
-	echo Building %FILENAME%.%EXTENSION%
+	echo Building %PROJECTNAME%.vbp =^> %OBJECTFILENAME%.exe
 )
 
 if not exist Prev (
@@ -160,27 +176,28 @@ if not exist Prev (
 	mkdir Prev 
 )
 
-if exist %BIN-PATH%\%FILENAME%.%EXTENSION% (
+if exist %BIN-PATH%\%OBJECTFILENAME%.%EXTENSION% (
 	echo Copying previous binary
-	copy %BIN-PATH%\%FILENAME%.%EXTENSION% Prev\* 
+	copy %BIN-PATH%\%OBJECTFILENAME%.%EXTENSION% Prev\* 
 )
 
 echo Setting binary compatibility mode = %BINARY_COMPAT:~0,1%; version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%
-echo ... for file: %PROJECTNAME%.vbp 
-setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:%BINARY_COMPAT:~0,1%
+echo ... for file: %PROJECTNAME%.vbp
+
+setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:%BINARY_COMPAT:~0,1% -ObjectFileName:%OBJECTFILENAME%.%EXTENSION%
 if errorlevel 1 goto :err
 
 echo Compiling
 vb6.exe /m %PROJECTNAME%.vbp
 if errorlevel 1 goto :err
 
-if exist %BIN-PATH%\%FILENAME%.lib (
+if exist %BIN-PATH%\%OBJECTFILENAME%.lib (
 	echo Deleting .lib file
-	del %BIN-PATH%\%FILENAME%.lib 
+	del %BIN-PATH%\%OBJECTFILENAME%.lib 
 )
-if exist %BIN-PATH%\%FILENAME%.exp (
+if exist %BIN-PATH%\%OBJECTFILENAME%.exp (
 	echo Deleting .exp file
-	del %BIN-PATH%\%FILENAME%.exp 
+	del %BIN-PATH%\%OBJECTFILENAME%.exp 
 )
 
 if "%BINARY_COMPAT%"=="PP" (
@@ -201,7 +218,7 @@ if defined COMPAT (
 	)
 	if not "%BINARY_COMPAT%" == "B" (
 		echo Copying binary to Compat
-		copy %BIN-PATH%\%FILENAME%.%EXTENSION% COMPAT\* 
+		copy %BIN-PATH%\%OBJECTFILENAME%.%EXTENSION% COMPAT\* 
 		if errorlevel 1 goto :err
 	)
 )

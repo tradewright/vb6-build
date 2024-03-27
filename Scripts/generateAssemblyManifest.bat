@@ -14,12 +14,18 @@ echo Builds the manifest for a VB6 exe, dll or ocx project
 echo.
 echo Usage:
 echo.
-echo generateAssemblyManifest projectName projectType [/NOEMBED] [/NOV6CC] [/INLINE]
-echo                          [/DEP:depFilename]
+echo generateAssemblyManifest projectName projectType [/O:objFileName ] [/NOEMBED]
+echo                          [/NOV6CC] [/INLINE] [/DEP:depFilename]
 echo.
 echo   projectName             Project name (excluding version).
 echo.
 echo   projectType             Project type ('dll' or 'ocx' or 'exe').
+echo.
+echo   /O:objFilename          Objectfile name (no extension)
+echo.
+echo   /NOVERSION              Indicates that the major and minor version numbers
+echo                           are not to be included as a suffix in the object
+echo                           filename.
 echo.
 echo   /NOEMBED                Don't embed manifest as resource.
 echo.
@@ -57,7 +63,11 @@ set NOV6CC=
 if "%~1" == "" goto :parsingComplete
 
 set ARG=%~1
-if /I "%ARG%" == "/NOEMBED" (
+if /I "%ARG:~0,3%"=="/O:" (
+	set OBJECTFILENAME=%ARG:~3%
+) else if /I "%ARG:~0,10%" == "/NOVERSION" (
+	set NOVERSION=YES
+) else if /I "%ARG%" == "/NOEMBED" (
 	set NOEMBED=NOEMBED
 ) else if /I "%ARG%" == "/NOV6CC" (
 	set NOV6CC=/NOV6CC
@@ -111,12 +121,19 @@ echo Generating manifest for %PROJECTNAME%
 
 path C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin;%PATH%
 
-set OBJECTFILENAME=%PROJECTNAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%.%EXTENSION%
-if "%EXTENSION%"=="exe" (
-        set MANIFESTFILENAME=%PROJECTNAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%.exe.manifest
-) else (
-        set MANIFESTFILENAME=%PROJECTNAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%.manifest
+if not defined OBJECTFILENAME (
+        set OBJECTFILENAME=%PROJECTNAME%
 )
+if not "%NOVERSION%"=="YES" (
+	set OBJECTFILENAME=%OBJECTFILENAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%
+)
+if "%EXTENSION%"=="exe" (
+        set MANIFESTFILENAME=%OBJECTFILENAME%.exe.manifest
+) else (
+        set MANIFESTFILENAME=%OBJECTFILENAME%.manifest
+)
+set OBJECTFILENAME=%OBJECTFILENAME%.%EXTENSION%
+
 
 :: NB: the following line sets a space in SWITCHES
 set SWITCHES= 

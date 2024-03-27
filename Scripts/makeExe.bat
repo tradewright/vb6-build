@@ -15,17 +15,23 @@ echo Builds a VB6 exe project
 echo.
 echo Usage:
 echo.
-echo makeExe projectName [path] [/M:{N^|E^|F}] [/CONSOLE] [/NOV6CC] [/INLINE]
-echo                     [/DEP:depFilename]
+echo makeExe projectName [path] [/O:objFileName] [/M:{N^|E^|F}] [/NOVERSION][/CONSOLE] [/NOV6CC]
+echo                     [/INLINE] [/DEP:depFilename]
 echo.
 echo   projectName             Project name (excluding version).
 echo.
 echo   path                    Path to folder containing project file.
 echo.
+echo   /O:objFilename          Objectfile name (no extension)
+echo.
 echo   /M                      Manifest requirement:
 echo                               N =^> no manifest (default)
 echo                               E =^> embed manifest in object file
 echo                               F =^> freestanding manifest file
+echo.
+echo   /NOVERSION              Indicates that the major and minor version numbers
+echo                           are not to be included as a suffix in the object
+echo                           filename.
 echo.
 echo   /CONSOLE                Link the exe to the Console library.
 echo.
@@ -57,13 +63,17 @@ set PROJECTNAME=
 set FOLDER=
 set LINKTOCONSOLE=
 set NOV6CC=
+set NOVERSION=NO
 
 :parse
 
 if "%~1" == "" goto :parsingComplete
 
 set ARG=%~1
-if /I "%ARG%" == "/M:N" (
+if /I "%ARG:~0,3%"=="/O:" (
+	set OBJECTFILENAME=%ARG:~3%
+	set RAWOBJECTFILENAME=!OBJECTFILENAME!
+) else if /I "%ARG%" == "/M:N" (
 	set MANIFEST=NONE
 ) else if /I "%ARG%" == "/M:E" (
 	set MANIFEST=EMBED
@@ -71,6 +81,8 @@ if /I "%ARG%" == "/M:N" (
 	set MANIFEST=NOEMBED
 ) else if /I "%ARG:~0,3%" == "/M:" (
 	set MANIFEST=
+) else if /I "%ARG:~0,10%" == "/NOVERSION" (
+	set NOVERSION=YES
 ) else if /I "%ARG%" == "/CONSOLE" (
 	set LINKTOCONSOLE=yes
 ) else if /I "%ARG%" == "/NOV6CC" (
@@ -117,17 +129,22 @@ if not defined MANIFEST (
 )
 if defined ERROR goto :err
 
-set FILENAME=%PROJECTNAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%.exe
+if not defined OBJECTFILENAME (
+        set OBJECTFILENAME=%PROJECTNAME%
+)
+if not "%NOVERSION%"=="YES" (
+	set OBJECTFILENAME=%OBJECTFILENAME%%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%
+)
 
 echo =================================
 if defined FOLDER (
-	echo Building %FOLDER%\%FILENAME%
+	echo Building %FOLDER%\%PROJECTNAME%.vbp =^> %OBJECTFILENAME%.exe
 ) else (
-	echo Building %FILENAME%
+	echo Building %PROJECTNAME%.vbp =^> %OBJECTFILENAME%.exe
 )
 
 echo Setting version = %VB6-BUILD-MAJOR%.%VB6-BUILD-MINOR%.%VB6-BUILD-REVISION%
-setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:N
+setprojectcomp.exe %PROJECTNAME%.vbp %VB6-BUILD-MAJOR% %VB6-BUILD-MINOR% %VB6-BUILD-REVISION% -mode:N  -ObjectFileName:%OBJECTFILENAME%.exe
 if errorlevel 1 goto :err
 
 :: Delay for a short time to prevent VB6 being run too frequently which
@@ -139,7 +156,7 @@ if errorlevel 1 goto :err
 
 if defined LINKTOCONSOLE (
 	echo Linking CONSOLE
-	link /EDIT /SUBSYSTEM:CONSOLE %BIN-PATH%\%FILENAME%
+	link /EDIT /SUBSYSTEM:CONSOLE %BIN-PATH%\%OBJECTFILENAME%.exe
 	if errorlevel 1 goto :err
 )
 
@@ -148,6 +165,8 @@ if "%MANIFEST%"=="NONE" (
 ) else ( 
 	:: NB: the following line sets a space in SWITCHES
 	set SWITCHES= 
+	if defined RAWOBJECTFILENAME set SWITCHES=!SWITCHES! /O:!RAWOBJECTFILENAME!
+	if defined NOVERSION set SWITCHES=!SWITCHES! /NOVERSION
 	if defined NOV6CC set SWITCHES=!SWITCHES! /NOV6CC
 	if defined INLINE set SWITCHES=!SWITCHES! %INLINE%
 	if defined DEP set SWITCHES=!SWITCHES! %DEP%

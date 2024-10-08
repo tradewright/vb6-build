@@ -12,11 +12,14 @@ if /I "%~2"=="DLL" (
 	echo Second parameter must be 'dll' or 'ocx'
 	goto :err
 )
+if /I "%~3"=="NOVERSION" (
+	set OBJECTFILE=%~1.%~2
+) else (
+	set OBJECTFILE=%~1%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%.%~2
+)
 
-SET VERSION=%VB6-BUILD-MAJOR%%VB6-BUILD-MINOR%
-
-echo Unregistering %~1%VERSION%.%~2
-regsvr32 -s -u %~1%VERSION%.%~2
+echo Unregistering "%OBJECTFILE%"
+regsvr32 -s -u "%OBJECTFILE%"
 if errorlevel 1 goto :err
 
 exit /B

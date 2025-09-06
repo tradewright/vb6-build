@@ -166,7 +166,7 @@ if not "%NOVERSION%"=="YES" (
 
 echo =================================
 if defined FOLDER (
-	echo Building %FOLDER%\%PROJECTNAME%.vbp =^> %OBJECTFILENAME%.exe
+	echo Building %FOLDER%\%PROJECTNAME%.vbp =^> %OBJECTFILENAME%.%EXTENSION%
 ) else (
 	echo Building %PROJECTNAME%.vbp =^> %OBJECTFILENAME%.exe
 )
